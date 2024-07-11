@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+
+<th:block th:replace="~{/layout/basic::setContent(~{this::content})}">
+   <th:block th:fragment="content">
+   
+   
+   <h1 class="mt-4">게시판 상세 페이지</h1>
+   
+   <div class="form-group">
+      <label>Bno</label>
+      <input type="text" class="form-control" name="bno" th:value="${dto.bno}"  readonly>
+   </div>
+   
+   <div class="form-group">
+      <label>Title</label>
+      <input type="text" class="form-control" name="title" th:value="${dto.title}"  readonly>
+   </div>
+   
+   <div class="form-group">
+      <label>Content</label>
+      <textarea class="form-control" name="content" rows="5" readonly="readonly">[[${dto.content}]]</textarea>
+   </div>
+   
+   <div class="form-group">
+      <label>작성자 E-mail</label>
+      <input type="text" class="form-control" name="writerEmail" th:value="${dto.writerEmail}"  readonly>
+   </div>
+   
+   <div class="form-group">
+      <label>작성일</label>
+      <input type="text" class="form-control" name="regDate" th:value="${#temporals.format(dto.regDate, 'yyyy/MM/dd')}"  readonly>
+   </div>
+   
+   <div class="form-group">
+      <label>수정일</label>
+      <input type="text" class="form-control" name="modDate" th:value="${#temporals.format(dto.modDate, 'yyyy/MM/dd')}"  readonly>
+   </div>
+   
+   <!-- 하위에는 수정(Modify)과 list 로 돌아가는 버튼에 대한 link 를 잡을거임. 링크를 버튼으로 감싸면 링크버튼이 됨.-->
+   <!-- 
+   여기서 봐야할 부분
+   1. 수정으로 갈때는 글번호가 같이 가야함.
+   2. 수정페이지는 이 폼 그대로 사용할건데, 몇가지 생각할 부분이 있음.
+         a. 어디를 수정할건지
+         b. 수정시 key 값이 gno 를 어떻게 넘기고 받을것인지 
+         c. 수정후, 수정 내용을 보기 위해 list 로 redirect 할건데, 페이지 넘버는 어떻게 이동시킬건지를 생각해보기
+   -->
+   
+   <a th:href="@{/board/modify(bno=${dto.bno})}">
+      <button type="button" class="btn btn-primary">글수정</button>
+   </a>
+   
+   <!-- list 로 back 버튼-->
+   <a th:href="@{/board/list(page=${pageRequestDTO.page})}">
+      <button type="button" class="btn btn-primary">글목록</button>
+   </a>
+   
+   <!-- div 를 생성해서 댓글수를 나타내도록 -->
+    <div class="mt-4">
+         <h3>
+            <span class = "badge badge-info addReply">댓글쓰기</span>
+            <span class = "badge badge-secondary replyCount">
+               댓글수[[${dto.replyCount}]]
+               <!-- 
+               클릭을 하면 하위 replyList 에서 가져온 댓글을 출력하고,
+               당연히 없던 childNode 를 동적으로 추가함.
+               때문에 DOM 객체 모델이 필요함. 이를 하위에 있는 JQuery 를 이용해서 표현함.
+               -->
+            </span>
+         </h3>
+   </div>
+   
+   <div class="list-group replyList">
+         <!-- 댓글들이 동적으로 표시되는 div 영역임 -->
+      </div>
+      
+      <div class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">댓글창</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                    
+                        <div class="form-group">
+                           <input class="form-control" type="text" name="replyText" placeholder="댓글을 입력하세요">
+                        </div>
+                        
+                        <div class="form-group">
+                           <input class="form-control" type="text" name="replyer" placeholder="작성자">
+                           <input type="hidden" name="rno">
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                       <button type="button" class="btn btn-danger replyRemove">댓글 삭제</button>
+                       <button type="button" class="btn btn-warning replyModify">댓글 수정</button>
+                       <button type="button" class="btn btn-primary replySave">작성 완료</button>
+                        <button type="button" class="btn btn-secondary close" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      
+      
+<!-- 비동기 통신을 이용해서 댓글수의 div 를 클릭하면 서버에 요청을 보내서 댓글 목록을 가져오도록 함. -->
+<script th:inline="javascript">
+//Jquery 를 이용해서 위 div 를 클릭하면 서버에 요청을 보내도록 함. 단, 페이지가 로딩되기 전에 필요 데이터를 모두 얻어냄.
+
+$(document).ready(function(){
+      
+   let bno = [[${dto.bno}]];
+   let listGroup = $(".replyList");//replyList 클래스 찾아내기
+	let rno;
+   //날짜값 formatter 정의
+   function formatTime(str){   
+      let date = new Date(str);
+      return date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes();
+   }
+   
+   
+   //댓글수의 뱃지를 클릭했을때, 댓글을 listGroup에 동적 추가하는 함수 정의
+   
+   
+  
+   
+   
+   function loadJsonData(){
+      $.getJSON('/replies/board/' + bno, (rep)=>{
+         console.log(rep)
+         
+         let str = "";//동적으로 생성하는 댓글 처리 박스를 문자열 Tag로 정의해서 사용함.
+         
+         //listGroup에 내용 추가
+         $(".replyCount").html('댓글 수 : ' + rep.length);
+         
+         //댓글의 내용을 부트스트랩의 Card 라는 Css에 담아서 출력함.
+         $.each(rep, (idx,reply)=>{
+            console.log(idx, " : ", reply);
+            //html 속성 중 dataset 속성
+            
+            str +='<div class="card-body" data-rno="' + reply.rno + '"><b>' + reply.rno + '</b>';
+            str +='<h5 class="card-title">' + reply.text + '</h5>';
+            str +='<h6 class="card-subtitle mb-2 text-muted">' + reply.replyer+ '</h6>'; 
+            str +='<p class="card-text">' + formatTime(reply.regDate) + '</p>';
+            str +='</div>';
+         });
+         
+         listGroup.html(str);
+      });
+   }
+   
+   //리플 개수 뱃지 클릭시 동적 Reply 뿌리기 이벤트 적용
+   $(".replyCount").click(function(){
+      loadJsonData();
+   });
+   
+   
+   let modal = $(".modal");
+   
+   $(".addReply").click(()=>{
+      modal.modal();
+      
+      //모달창에 입력되기 전에 모든 내용을 초기화
+      $('input[name="replyText"]').val('');
+      $('input[name="replyer"]').val('');
+      
+      //저장, 닫기 만 남기고 모든 버튼 숨기기
+      $('.modal-footer .btn').hide();
+      $('.replySave, .close').show();
+      
+   });
+   
+   
+   //댓글 저장 이벤트 정의
+   $('.replySave').click(()=>{
+      //JSON으로 보냄. 일반 자바스크립트 객체로 전송할 데이터를 생성후, JSON().stringify()를 이용해서 JSON으로 변환후 전송함
+      let reply = {
+         bno:bno,
+         text:$('input[name="replyText"]').val(),
+         replyer:$('input[name="replyer"]').val()
+      };
+      
+      console.log(reply);
+      
+      //ajax 를 이용해서 서버에 보냄
+      $.ajax({//필수속성 url, method, data(JSON 으로 변환된), contentType:전송타입지정, dataType, Promise callBack
+         //각 속성과 값은 : 로 구분하고, 각 속성의 구분은 ,로 함.
+         url:'/replies/',
+         method:'post',
+         data:JSON.stringify(reply),
+         contentType:'application/json; charset:utf-8',
+         dataType:'json',
+         success:(result)=>{
+            console.log("서버응답 데이터 : " + result);
+            
+            if(result){//서버에서 응답으로 댓글번호가 왔다면, 
+               alert('댓글 등록 완료');
+               $('.close').trigger('click');
+               //modal.modal('hide');
+               //등록된 댓글 다시 보여주기
+               loadJsonData();
+            }
+            
+         }
+         
+      })
+      
+   });
+   
+   
+   //댓글 리스트를 클릭하면, Card 에 담겨있는 댓글 내용을 값으로 넣도록 이벤트 처리할거임.
+   
+   
+    $(".replyList").on('click', '.card-body', (t) => {
+      rno = $(t.currentTarget).data('rno');
+       
+       $('input[name="replyText"]').val($(t.currentTarget).find(".card-title").html());
+       $('input[name="replyer"]').val($(t.currentTarget).find(".card-subtitle").html());
+       $('input[name="rno"]').val(rno);
+       $('.modal-footer .btn').hide();
+       $('.replyModify, .replyRemove, .close').show();
+
+       modal.modal();   
+    });
+      
+   // 삭제버튼에 이벤트 등록하고, 콜백으로 ajax 실행합니다. 이때 값으로는 rno 를 보내고,
+   // 서버에서의 결과 값을 받아서 alert() 후, ;loadJsonData() 를 호출하면 댓글 리스트가 다시 보이게 됩니다.
+   // replies/100 ---> 서버로 보내는 변수라는 뜻
+   
+   $(".replyRemove").click(()=>{
+	   $.ajax({
+	         url:'/replies/' + rno,
+	         method:'delete',
+	         // 값만 보내면 되기 때문에 지움
+	         success:(result)=>{
+	            console.log("result : " + result);
+	            
+	            if(result){ 
+	               alert('댓글이 삭제되었습니다.');
+	               $('.close').trigger('click');
+	               
+	               loadJsonData();
+	            }
+	            
+	         }
+	         
+	      })
+	      
+	   });
+	   
+   
+   
+   
+   
+   
+   
+   
+   //댓글 수정 작업
+   $('.replyModify').click(()=>{
+     
+	  
+      let reply = {
+            rno:rno,
+            text:$('input[name="replyText"]').val(),
+            replyer:$('input[name="replyer"]').val(),
+            bno:bno
+         };
+      
+      console.log("수정될 내용 : " + reply);
+      
+      $.ajax({
+         url:'/replies/' + rno,
+         method:'put',
+         data:JSON.stringify(reply),
+         contentType:'application/json; charset:utf-8',
+         success:(result)=>{
+            console.log("서버응답 데이터 : " + result);
+            
+            if(result){ 
+               alert('댓글 수정 완료');
+               $('.close').trigger('click');
+               
+               loadJsonData();
+            }
+            
+         }
+         
+      })
+      
+   });
+   
+   
+   /* $(".replyCount").click(()=>{
+      //JQuery에서 REST API 서버로 JSON 데이터를 요청할때 사용되는 API : getJSON()임.
+      //파라미터는 여러개 있는데, 필수 정보는 1. URL 정보, 2. 콜백함수(성공 or 실패)임.
+      $.getJSON('/replies/board/' + bno, (rep)=>{
+         console.log(rep)
+      });
+   }); */
+   
+});
+
+
+
+
+</script>
+      
+   
+   </th:block>
+</th:block>

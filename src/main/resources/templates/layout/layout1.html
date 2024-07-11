@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=divice-width, initial-scale=1.0" >
+<title>템플릿 Layout 페이지</title>
+
+</head>
+<body>
+<!-- 이 페이지에는 간단한 style 과 페이지의 구성항목을 정의하고, 실제내용은 include 할게요 -->
+
+
+<style>
+*{
+	margin: 0; padding: 0;
+}
+.header{
+	width: 100vw;
+	height: 20vh;
+	background-color: aqua;
+}
+.content{
+	width: 100vw;
+	height: 70vh;
+	background-color: gray;
+}
+.footer{
+	width: 100vw;
+	height: 100vh;
+	background-color: blue;
+}
+
+</style>
+
+
+
+<th:block th:fragment="setContent(content)">
+<div class="header">
+	<h1> 여긴 헤더</h1>
+</div>
+
+<div class="content">
+	<th:block th:replace="${content}">
+	<h1> 여긴 컨텐트</h1>
+	</th:block>
+</div>
+
+<div class="footer">
+	<h1> 여긴 푸터</h1>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
